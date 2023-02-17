@@ -1,13 +1,18 @@
-FROM python:3.10-alpine as builder
+#  修改记录：
+# 将 python:3.10-alpine 替换成 python:3.10-slim
+# 将 apk 命令替换成 apt-get
+# 尚未替换国内镜像
+
+FROM python:3.10-slim as builder 
 COPY package.json .npmrc pnpm-lock.yaml /tmp/build/
 RUN set -x \
-    && apk update \
-    && apk add nodejs npm git \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends nodejs npm git \
     && npm i -g pnpm \
     && cd /tmp/build \
     && pnpm install --prod
 
-FROM python:3.10-alpine
+FROM python:3.10-slim
 
 ARG QL_MAINTAINER="whyour"
 LABEL maintainer="${QL_MAINTAINER}"
@@ -24,25 +29,24 @@ ENV PNPM_HOME=/root/.local/share/pnpm \
     QL_BRANCH=${QL_BRANCH}
 
 RUN set -x \
-    && sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
-    && apk update -f \
-    && apk upgrade \
-    && apk --no-cache add -f bash \
-                             coreutils \
-                             moreutils \
-                             git \
-                             curl \
-                             wget \
-                             tzdata \
-                             perl \
-                             openssl \
-                             nginx \
-                             nodejs \
-                             jq \
-                             openssh \
-                             npm \
-    && rm -rf /var/cache/apk/* \
-    && apk update \
+    && apt-get update -f \
+    && apt-get upgrade -y \
+    && apt-get --no-install-recommends -y install bash \
+                                                  coreutils \
+                                                  moreutils \
+                                                  git \
+                                                  curl \
+                                                  wget \
+                                                  tzdata \
+                                                  perl \
+                                                  openssl \
+                                                  nginx \
+                                                  nodejs \
+                                                  jq \
+                                                  openssh-client \
+                                                  npm \
+    && rm -rf /var/cache/apt/* \
+    && apt-get update \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && echo "Asia/Shanghai" > /etc/timezone \
     && git config --global user.email "qinglong@@users.noreply.github.com" \
